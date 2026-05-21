@@ -2,15 +2,16 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, Music, Sparkles, BookOpen, FileText, Heart } from 'lucide-react';
+import { Home, Music, Sparkles, BookOpen, FileText, Heart, Headphones } from 'lucide-react';
 
 const NAV_ITEMS = [
-  { icon: Home,     label: 'HOME',    href: '/home'    as const },
-  { icon: Music,    label: 'MUSIC',   href: '/music'   as const },
-  { icon: Sparkles, label: 'LUMINA',  href: '/lumina'  as const },
-  { icon: BookOpen, label: 'LIBRARY', href: '/library' as const },
-  { icon: FileText, label: 'JOURNAL', href: '/journal' as const },
-  { icon: Heart,    label: 'YOU',     href: '/you'     as const },
+  { icon: Home,       label: 'HOME',      href: '/home'       as const },
+  { icon: Music,      label: 'MUSIC',     href: '/music'      as const },
+  { icon: Sparkles,   label: 'LUMINA',    href: '/lumina'     as const },
+  { icon: BookOpen,   label: 'LIBRARY',   href: '/library'    as const },
+  { icon: Headphones, label: 'AUDIOBOOKS', href: '/audiobooks' as const },
+  { icon: FileText,   label: 'JOURNAL',   href: '/journal'    as const },
+  { icon: Heart,      label: 'YOU',       href: '/you'        as const },
 ];
 
 export default function BottomNav() {
