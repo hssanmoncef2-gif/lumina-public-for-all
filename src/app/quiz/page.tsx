@@ -238,7 +238,7 @@ export default function QuizPage() {
   const router = useRouter()
   const { setMood, setAmbient } = useLuminaStore()
 
-  const [ setUserId] = useState<string | undefined>(undefined)
+  const [userId, setUserId] = useState<string | undefined>(undefined)
   const [mode, setMode] = useState<'choose' | 'ai' | 'quiz' | 'done'>('choose')
 
   useEffect(() => {

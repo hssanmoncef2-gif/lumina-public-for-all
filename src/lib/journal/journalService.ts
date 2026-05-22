@@ -20,7 +20,7 @@ export interface UpdateEntryInput extends Partial<CreateEntryInput> {
 function mapEntry(row: any): JournalEntry {
   return {
     id:            row._id ?? row.id,
-    userId:        row.
+    userId:        row.userId,
     title:         row.title,
     content:       row.content,
     mood:          row.mood as MoodId | undefined,
@@ -48,7 +48,7 @@ export async function getEntry(id: string, userId: string): Promise<JournalEntry
 export async function createEntry(userId: string, input: CreateEntryInput): Promise<JournalEntry> {
   const res = await fetch('/api/journal', {
     method: 'POST', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({  ...input }),
+    body: JSON.stringify({ userId, ...input }),
   })
   if (!res.ok) throw new Error('Failed to create entry')
   return mapEntry(await res.json())
@@ -57,7 +57,7 @@ export async function createEntry(userId: string, input: CreateEntryInput): Prom
 export async function updateEntry(id: string, userId: string, input: UpdateEntryInput): Promise<JournalEntry> {
   const res = await fetch(`/api/journal/${id}`, {
     method: 'PATCH', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({  ...input }),
+    body: JSON.stringify({ userId, ...input }),
   })
   if (!res.ok) throw new Error('Failed to update entry')
   return mapEntry(await res.json())
@@ -73,6 +73,6 @@ export async function deleteEntry(id: string, userId: string): Promise<void> {
 export async function toggleFavorite(id: string, userId: string, isFavorite: boolean): Promise<void> {
   await fetch(`/api/journal/${id}`, {
     method: 'PATCH', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({  isFavorite }),
+    body: JSON.stringify({ userId, isFavorite }),
   })
 }

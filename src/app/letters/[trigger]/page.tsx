@@ -58,7 +58,7 @@ export default function LetterViewPage({ params }: Props) {
     if (!userId) return
     fetch('/api/letters', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({  letterId: letter.id }),
+      body: JSON.stringify({ userId, letterId: letter.id }),
     }).catch(() => {})
   }, [phase, letter, session])
 

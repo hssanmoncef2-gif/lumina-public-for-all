@@ -1,46 +1,33 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/authOptions'
 import { connectDB } from '@/lib/mongodb/client'
 import { LetterRead } from '@/lib/models/LetterRead'
+import mongoose from 'mongoose'
 
-export async function GET() {
-  const session = await getServerSession(authOptions)
+function toObjectId(id: string) {
+  return mongoose.Types.ObjectId.isValid(id) ? new mongoose.Types.ObjectId(id) : null
+}
 
-  if (!session?.user || !(session.user as any).id) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
-
-  const userId = (session.user as any).id
+export async function GET(req: NextRequest) {
+  const userId = req.nextUrl.searchParams.get('userId')
+  if (!userId) return NextResponse.json({ error: 'userId required' }, { status: 400 })
 
   await connectDB()
-
-  const reads = await LetterRead.find({ userId }).lean()
-
-  return NextResponse.json(reads)
+  const userIdValue = toObjectId(userId) ?? userId
+  const reads = await LetterRead.find({ userId: userIdValue }).lean()
+  return NextResponse.json(reads.map((r) => r.letterId))
 }
 
 export async function POST(req: NextRequest) {
-  const session = await getServerSession(authOptions)
-
-  if (!session?.user || !(session.user as any).id) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
-
-  const userId = (session.user as any).id
-  const { letterId } = await req.json()
-
-  if (!letterId) {
-    return NextResponse.json({ error: 'letterId required' }, { status: 400 })
-  }
+  const { userId, letterId } = await req.json()
+  if (!userId || !letterId) return NextResponse.json({ error: 'userId and letterId required' }, { status: 400 })
 
   await connectDB()
-
-  const read = await LetterRead.findOneAndUpdate(
-    {  letterId },
-    {  letterId },
-    { upsert: true, new: true }
+  const userIdValue = toObjectId(userId) ?? userId
+  await LetterRead.updateOne(
+    { userId: userIdValue, letterId },
+    { $setOnInsert: { readAt: new Date() } },
+    { upsert: true }
   )
 
-  return NextResponse.json(read)
+  return NextResponse.json({ ok: true })
 }

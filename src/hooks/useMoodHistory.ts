@@ -41,7 +41,7 @@ export function useMoodHistory(userId: string | null) {
 
       const entries: MoodHistoryEntry[] = data.map((row: any) => ({
         id:        row._id,
-        userId:    row.
+        userId:    row.userId,
         moodId:    row.moodId as MoodId,
         intensity: row.intensity,
         notes:     row.notes,
@@ -67,7 +67,7 @@ export async function logMood(userId: string, moodId: MoodId, intensity = 3) {
   await fetch('/api/mood', {
     method:  'POST',
     headers: { 'Content-Type': 'application/json' },
-    body:    JSON.stringify({  moodId, intensity }),
+    body:    JSON.stringify({ userId, moodId, intensity }),
   })
 }
 

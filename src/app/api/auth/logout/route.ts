@@ -15,7 +15,7 @@ export async function POST() {
   const userId = (session.user as any).id
   if (userId) {
     await connectDB()
-    await User.findByIdAndUpdate( { $inc: { sessionVersion: 1 } })
+    await User.findByIdAndUpdate(userId, { $inc: { sessionVersion: 1 } })
   }
 
   return NextResponse.json({ ok: true })

@@ -1,87 +1,73 @@
+// ============================================================
+// LUMINA — GET/PATCH/DELETE /api/journal/[id]
+// ============================================================
+
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/authOptions'
 import { connectDB } from '@/lib/mongodb/client'
 import { JournalEntry } from '@/lib/models/JournalEntry'
+import mongoose from 'mongoose'
 
-export async function GET(
-  req: NextRequest,
-  context: { params: Promise<{ id: string }> }
-) {
-  const session = await getServerSession(authOptions)
+function toObjectId(id: string) {
+  return mongoose.Types.ObjectId.isValid(id) ? new mongoose.Types.ObjectId(id) : null
+}
 
-  if (!session?.user || !(session.user as any).id) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
+export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params
+  const userId = req.nextUrl.searchParams.get('userId')
+  if (!userId) return NextResponse.json({ error: 'userId required' }, { status: 400 })
 
-  const userId = (session.user as any).id
-  const { id } = await context.params
+  const entryId = toObjectId(id)
+  if (!entryId) return NextResponse.json({ error: 'Invalid id' }, { status: 400 })
 
   await connectDB()
+  const userIdValue = toObjectId(userId) ?? userId
+  const entry = await JournalEntry.findOne({ _id: entryId, userId: userIdValue }).lean()
 
-  const entry = await JournalEntry.findOne({
-    _id: id,
-    
-  }).lean()
-
-  if (!entry) {
-    return NextResponse.json({ error: 'Not found' }, { status: 404 })
-  }
-
+  if (!entry) return NextResponse.json({ error: 'Not found' }, { status: 404 })
   return NextResponse.json(entry)
 }
 
-export async function PATCH(
-  req: NextRequest,
-  context: { params: Promise<{ id: string }> }
-) {
-  const session = await getServerSession(authOptions)
+export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params
+  const { userId, title, content, mood, moodIntensity, tags, isFavorite, aiSummary } = await req.json()
+  if (!userId) return NextResponse.json({ error: 'userId required' }, { status: 400 })
 
-  if (!session?.user || !(session.user as any).id) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
-
-  const userId = (session.user as any).id
-  const { id } = await context.params
-  const body = await req.json()
+  const entryId = toObjectId(id)
+  if (!entryId) return NextResponse.json({ error: 'Invalid id' }, { status: 400 })
 
   await connectDB()
 
-  const updated = await JournalEntry.findOneAndUpdate(
-    {
-      _id: id,
-      
-    },
-    {
-      $set: body,
-    },
-    {
-      new: true,
-    }
-  )
+  const patch: Record<string, unknown> = {}
+  if (title         !== undefined) patch.title         = title
+  if (content       !== undefined) patch.content       = content
+  if (mood          !== undefined) patch.mood          = mood
+  if (moodIntensity !== undefined) patch.moodIntensity = moodIntensity
+  if (tags          !== undefined) patch.tags          = tags
+  if (isFavorite    !== undefined) patch.isFavorite    = isFavorite
+  if (aiSummary     !== undefined) patch.aiSummary     = aiSummary
 
-  return NextResponse.json(updated)
+  const userIdValue = toObjectId(userId) ?? userId
+  const entry = await JournalEntry.findOneAndUpdate(
+    { _id: entryId, userId: userIdValue },
+    { $set: patch },
+    { new: true }
+  ).lean()
+
+  if (!entry) return NextResponse.json({ error: 'Not found' }, { status: 404 })
+  return NextResponse.json(entry)
 }
 
-export async function DELETE(
-  req: NextRequest,
-  context: { params: Promise<{ id: string }> }
-) {
-  const session = await getServerSession(authOptions)
+export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params
+  const { userId } = await req.json()
+  if (!userId) return NextResponse.json({ error: 'userId required' }, { status: 400 })
 
-  if (!session?.user || !(session.user as any).id) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
-
-  const userId = (session.user as any).id
-  const { id } = await context.params
+  const entryId = toObjectId(id)
+  if (!entryId) return NextResponse.json({ error: 'Invalid id' }, { status: 400 })
 
   await connectDB()
-
-  await JournalEntry.deleteOne({
-    _id: id,
-    
-  })
+  const userIdValue = toObjectId(userId) ?? userId
+  await JournalEntry.deleteOne({ _id: entryId, userId: userIdValue })
 
   return NextResponse.json({ ok: true })
 }

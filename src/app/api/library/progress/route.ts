@@ -26,8 +26,8 @@ export async function POST(req: NextRequest) {
   await connectDB()
 
   const progress = await ReadingProgress.findOneAndUpdate(
-    {  bookId },
-    {  bookId, source, pageNumber, totalPages, title, coverUrl, updatedAt: new Date() },
+    { userId, bookId },
+    { userId, bookId, source, pageNumber, totalPages, title, coverUrl, updatedAt: new Date() },
     { upsert: true, new: true }
   )
 
@@ -42,6 +42,6 @@ export async function DELETE(req: NextRequest) {
   if (!bookId) return NextResponse.json({ error: 'missing params' }, { status: 400 });
 
   await connectDB();
-  await ReadingProgress.deleteOne({  bookId });
+  await ReadingProgress.deleteOne({ userId, bookId });
   return NextResponse.json({ ok: true });
 }

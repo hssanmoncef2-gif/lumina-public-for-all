@@ -53,7 +53,7 @@ export function useJournalEntries(userId?: string) {
   const toggleFav = useCallback(async (id: string, value: boolean) => {
     if (!userId) return
     try {
-      await toggleFavorite(id,  value)
+      await toggleFavorite(id, userId, value)
       setEntries(prev =>
         prev.map(e => e.id === id ? { ...e, isFavorite: value } : e)
       )
@@ -85,14 +85,14 @@ export function useJournalEntry(id?: string, userId?: string) {
     if (!id || !userId || !entry) return
     setIsSaving(true)
     try {
-      const updated = await updateEntry(id,  input)
+      const updated = await updateEntry(id, userId, input)
       setEntry(updated)
     } catch {
       setError('Could not save entry.')
     } finally {
       setIsSaving(false)
     }
-  }, [id,  entry])
+  }, [id, userId, entry])
 
   return { entry, isLoading, isSaving, error, save }
 }
@@ -108,7 +108,7 @@ export function useCreateEntry(userId?: string) {
     setIsSaving(true)
     setError(null)
     try {
-      const entry = await createEntry( input)
+      const entry = await createEntry(userId, input)
       return entry
     } catch {
       setError('Could not save your entry.')
