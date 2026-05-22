@@ -52,7 +52,7 @@ export default function ReaderPage() {
   const params  = useParams()
   const search  = useSearchParams()
   const { data: session } = useSession()
-  const userId  = (session?.user as any)?.id ?? session?.user?.email ?? ''
+  const userId = (session?.user as any)?.id ?? (session?.user as any)?.email;
 
   const bookId   = decodeURIComponent(params.bookId as string)
   const title    = search.get('title')       ?? 'Book'
@@ -140,7 +140,7 @@ export default function ReaderPage() {
   // init
   useEffect(() => {
     if (userId) {
-      fetch(`/api/library/progress?userId=${userId}`)
+      fetch('/api/library/progress')
         .then(r => r.json())
         .then((data: any[]) => {
           if (Array.isArray(data)) {
@@ -218,7 +218,7 @@ export default function ReaderPage() {
       await fetch('/api/library/progress', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId, bookId, source, pageNumber: page, totalPages, title, coverUrl }),
+        body: JSON.stringify({ bookId, source, pageNumber: page, totalPages, title, coverUrl }),
       })
       setSave('saved')
     } catch {}
