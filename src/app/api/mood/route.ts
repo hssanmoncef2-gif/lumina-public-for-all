@@ -1,26 +1,29 @@
-// ============================================================
-// LUMINA — GET/POST /api/mood
-// ============================================================
-
 import { NextRequest, NextResponse } from 'next/server'
 import { connectDB } from '@/lib/mongodb/client'
 import { MoodEntry } from '@/lib/models/MoodEntry'
-import mongoose from 'mongoose'
+import { getServerSession } from 'next-auth/next'
+import { authOptions } from '@/lib/authOptions'
 
-function toObjectId(id: string) {
-  return mongoose.Types.ObjectId.isValid(id) ? new mongoose.Types.ObjectId(id) : null
+async function getUserId() {
+  const session = await getServerSession(authOptions)
+  if (!session?.user) return null
+  return (session.user as any).id ?? (session.user as any).email
 }
 
 export async function GET(req: NextRequest) {
-  const userId = req.nextUrl.searchParams.get('userId')
-  const days   = parseInt(req.nextUrl.searchParams.get('days') ?? '30', 10)
-  if (!userId) return NextResponse.json({ error: 'userId required' }, { status: 400 })
+  const userId = await getUserId()
+  const days = parseInt(req.nextUrl.searchParams.get('days') ?? '30', 10)
+
+  if (!userId) {
+    return NextResponse.json({ error: 'Unauthenticated' }, { status: 401 })
+  }
 
   await connectDB()
+
   const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000)
-  const userIdValue = toObjectId(userId) ?? userId
+
   const entries = await MoodEntry.find({
-    userId:    userIdValue,
+    userId,
     createdAt: { $gte: since },
   }).sort({ createdAt: -1 }).lean()
 
@@ -28,17 +31,26 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const { userId, moodId, intensity, notes } = await req.json()
-  if (!userId || !moodId) return NextResponse.json({ error: 'userId and moodId required' }, { status: 400 })
+  const userId = await getUserId()
+
+  if (!userId) {
+    return NextResponse.json({ error: 'Unauthenticated' }, { status: 401 })
+  }
+
+  const { moodId, intensity, notes } = await req.json()
+
+  if (!moodId) {
+    return NextResponse.json({ error: 'moodId required' }, { status: 400 })
+  }
 
   await connectDB()
-  const userIdValue = toObjectId(userId) ?? userId
+
   const entry = await MoodEntry.create({
-    userId:    userIdValue,
+    userId,
     moodId,
     intensity: intensity ?? 3,
-    notes:     notes ?? undefined,
+    notes: notes ?? undefined,
   })
 
-  return NextResponse.json(entry, { status: 201 })
+  return NextResponse.json(entry)
 }

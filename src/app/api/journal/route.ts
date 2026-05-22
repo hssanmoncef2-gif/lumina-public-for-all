@@ -1,20 +1,17 @@
-import { NextRequest, NextResponse } from "next/server"
-import { getServerSession } from "next-auth"
-import { authOptions } from "@/lib/authOptions"
-import { connectDB } from "@/lib/mongodb/client"
-import { JournalEntry } from "@/lib/models/JournalEntry"
-
-async function getUserId() {
-  const session = await getServerSession(authOptions)
-  return (session?.user as any)?.id ?? (session?.user as any)?.email
-}
+import { NextRequest, NextResponse } from 'next/server'
+import { connectDB } from '@/lib/mongodb/client'
+import { JournalEntry } from '@/lib/models/JournalEntry'
+import { getServerSession } from 'next-auth/next'
+import { authOptions } from '@/lib/authOptions'
 
 export async function GET() {
-  const userId = await getUserId()
+  const session = await getServerSession(authOptions)
 
-  if (!userId) {
-    return NextResponse.json({ error: "Unauthenticated" }, { status: 401 })
+  if (!session?.user) {
+    return NextResponse.json({ error: 'Unauthenticated' }, { status: 401 })
   }
+
+  const userId = (session.user as any).id ?? (session.user as any).email
 
   await connectDB()
 
@@ -26,17 +23,19 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
-  const userId = await getUserId()
+  const session = await getServerSession(authOptions)
 
-  if (!userId) {
-    return NextResponse.json({ error: "Unauthenticated" }, { status: 401 })
+  if (!session?.user) {
+    return NextResponse.json({ error: 'Unauthenticated' }, { status: 401 })
   }
 
+  const userId = (session.user as any).id ?? (session.user as any).email
+
   const body = await req.json()
-  const { title, content, mood, moodIntensity, tags, isFavorite } = body
+  const { title, content, mood, moodIntensity, tags, isFavorite, aiSummary } = body
 
   if (!content) {
-    return NextResponse.json({ error: "content required" }, { status: 400 })
+    return NextResponse.json({ error: 'content required' }, { status: 400 })
   }
 
   await connectDB()
@@ -49,7 +48,8 @@ export async function POST(req: NextRequest) {
     moodIntensity: moodIntensity ?? undefined,
     tags: tags ?? [],
     isFavorite: isFavorite ?? false,
+    aiSummary: aiSummary ?? undefined,
   })
 
-  return NextResponse.json(entry, { status: 201 })
+  return NextResponse.json(entry)
 }
