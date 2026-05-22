@@ -1,28 +1,24 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { connectDB } from '@/lib/mongodb/client'
-import { JournalEntry } from '@/lib/models/JournalEntry'
-import mongoose from 'mongoose'
+import { NextRequest, NextResponse } from "next/server"
+import { getServerSession } from "next-auth"
+import { authOptions } from "@/lib/authOptions"
+import { connectDB } from "@/lib/mongodb/client"
+import { JournalEntry } from "@/lib/models/JournalEntry"
 
-function toObjectId(userId: string) {
-  return mongoose.Types.ObjectId.isValid(userId)
-    ? new mongoose.Types.ObjectId(userId)
-    : null
+async function getUserId() {
+  const session = await getServerSession(authOptions)
+  return (session?.user as any)?.id ?? (session?.user as any)?.email
 }
 
-export async function GET(req: NextRequest) {
-  const userId = req.nextUrl.searchParams.get('userId')
-  if (!userId) return NextResponse.json({ error: 'userId required' }, { status: 400 })
+export async function GET() {
+  const userId = await getUserId()
+
+  if (!userId) {
+    return NextResponse.json({ error: "Unauthenticated" }, { status: 401 })
+  }
 
   await connectDB()
 
-  // Support both ObjectId and plain string userId
-  const query = toObjectId(userId)
-    ? { userId: toObjectId(userId) }
-    : { userIdStr: userId }
-
-  const entries = await JournalEntry.find(
-    toObjectId(userId) ? { userId: toObjectId(userId) } : { userId: userId as any }
-  )
+  const entries = await JournalEntry.find({ userId })
     .sort({ createdAt: -1 })
     .lean()
 
@@ -30,26 +26,29 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const body = await req.json()
-  const { userId, title, content, mood, moodIntensity, tags, isFavorite } = body
+  const userId = await getUserId()
 
-  if (!userId || !content) {
-    return NextResponse.json({ error: 'userId and content required' }, { status: 400 })
+  if (!userId) {
+    return NextResponse.json({ error: "Unauthenticated" }, { status: 401 })
+  }
+
+  const body = await req.json()
+  const { title, content, mood, moodIntensity, tags, isFavorite } = body
+
+  if (!content) {
+    return NextResponse.json({ error: "content required" }, { status: 400 })
   }
 
   await connectDB()
 
-  // Accept both real ObjectId and dev string userIds
-  const userIdValue = toObjectId(userId) ?? userId
-
   const entry = await JournalEntry.create({
-    userId:        userIdValue,
-    title:         title ?? undefined,
+    userId,
+    title: title ?? undefined,
     content,
-    mood:          mood ?? undefined,
+    mood: mood ?? undefined,
     moodIntensity: moodIntensity ?? undefined,
-    tags:          tags ?? [],
-    isFavorite:    isFavorite ?? false,
+    tags: tags ?? [],
+    isFavorite: isFavorite ?? false,
   })
 
   return NextResponse.json(entry, { status: 201 })
