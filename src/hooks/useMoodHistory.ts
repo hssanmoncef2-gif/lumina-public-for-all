@@ -23,19 +23,18 @@ interface MoodTrend {
   moodFrequency: Partial<Record<MoodId, number>>
 }
 
-export function useMoodHistory(userId: string | null) {
+export function useMoodHistory() {
   const [history,   setHistory]   = useState<MoodHistoryEntry[]>([])
   const [trend,     setTrend]     = useState<MoodTrend | null>(null)
   const [isLoading, setLoading]   = useState(false)
   const [error,     setError]     = useState<string | null>(null)
 
   const fetchHistory = useCallback(async () => {
-    if (!userId) return
     setLoading(true)
     setError(null)
 
     try {
-      const res = await fetch(`/api/mood?userId=${userId}&days=30`)
+      const res = await fetch(`/api/mood?days=30`)
       if (!res.ok) throw new Error('Failed to fetch')
       const data = await res.json()
 
@@ -55,7 +54,7 @@ export function useMoodHistory(userId: string | null) {
     } finally {
       setLoading(false)
     }
-  }, [userId])
+  }, [])
 
   useEffect(() => { fetchHistory() }, [fetchHistory])
 
@@ -63,12 +62,14 @@ export function useMoodHistory(userId: string | null) {
 }
 
 // ---- Helper: also log a mood entry ----
-export async function logMood(userId: string, moodId: MoodId, intensity = 3) {
-  await fetch('/api/mood', {
+export async function logMood(moodId: MoodId, intensity = 3) {
+  const res = await fetch('/api/mood', {
     method:  'POST',
     headers: { 'Content-Type': 'application/json' },
-    body:    JSON.stringify({ userId, moodId, intensity }),
+    body:    JSON.stringify({ moodId, intensity }),
   })
+  if (!res.ok) throw new Error('Failed to log mood')
+  return res.json()
 }
 
 function computeTrend(entries: MoodHistoryEntry[]): MoodTrend {

@@ -33,46 +33,46 @@ function mapEntry(row: any): JournalEntry {
   }
 }
 
-export async function getEntries(userId: string): Promise<JournalEntry[]> {
-  const res = await fetch(`/api/journal?userId=${userId}`)
+export async function getEntries(): Promise<JournalEntry[]> {
+  const res = await fetch(`/api/journal`)
   if (!res.ok) throw new Error('Failed to load entries')
   return (await res.json()).map(mapEntry)
 }
 
-export async function getEntry(id: string, userId: string): Promise<JournalEntry | null> {
-  const res = await fetch(`/api/journal/${id}?userId=${userId}`)
+export async function getEntry(id: string): Promise<JournalEntry | null> {
+  const res = await fetch(`/api/journal/${id}`)
   if (!res.ok) return null
   return mapEntry(await res.json())
 }
 
-export async function createEntry(userId: string, input: CreateEntryInput): Promise<JournalEntry> {
+export async function createEntry(input: CreateEntryInput): Promise<JournalEntry> {
   const res = await fetch('/api/journal', {
     method: 'POST', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ userId, ...input }),
+    body: JSON.stringify(input),
   })
   if (!res.ok) throw new Error('Failed to create entry')
   return mapEntry(await res.json())
 }
 
-export async function updateEntry(id: string, userId: string, input: UpdateEntryInput): Promise<JournalEntry> {
+export async function updateEntry(id: string, input: UpdateEntryInput): Promise<JournalEntry> {
   const res = await fetch(`/api/journal/${id}`, {
     method: 'PATCH', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ userId, ...input }),
+    body: JSON.stringify(input),
   })
   if (!res.ok) throw new Error('Failed to update entry')
   return mapEntry(await res.json())
 }
 
-export async function deleteEntry(id: string, userId: string): Promise<void> {
-  await fetch(`/api/journal/${id}`, {
-    method: 'DELETE', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ userId }),
+export async function deleteEntry(id: string): Promise<void> {
+  const res = await fetch(`/api/journal/${id}`, {
+    method: 'DELETE',
   })
+  if (!res.ok) throw new Error('Failed to delete entry')
 }
 
-export async function toggleFavorite(id: string, userId: string, isFavorite: boolean): Promise<void> {
+export async function toggleFavorite(id: string, isFavorite: boolean): Promise<void> {
   await fetch(`/api/journal/${id}`, {
     method: 'PATCH', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ userId, isFavorite }),
+    body: JSON.stringify({ isFavorite }),
   })
 }

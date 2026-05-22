@@ -22,7 +22,7 @@ export default function NewJournalEntryPage() {
   // Prefer real session userId, fall back to store, then dev fallback
   const userId = (session?.user as any)?.id ?? useLuminaStore.getState().user?.id ?? DEV_USER_ID
 
-  const { create, isSaving, error } = useCreateEntry(userId)
+  const { create, isSaving, error } = useCreateEntry()
 
   async function handleSave(data: {
     title: string
