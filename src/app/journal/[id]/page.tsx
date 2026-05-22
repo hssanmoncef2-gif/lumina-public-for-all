@@ -33,7 +33,7 @@ export default function JournalEntryPage({ params }: PageProps) {
   const [isEditing, setIsEditing] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
 
-  const { entry, isLoading, isSaving, save } = useJournalEntry(id)
+  const { entry, isLoading, isSaving, save } = useJournalEntry(id, userId)
 
   async function handleSave(data: {
     title: string

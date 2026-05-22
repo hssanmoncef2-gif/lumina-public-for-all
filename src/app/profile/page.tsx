@@ -31,7 +31,7 @@ export default function ProfilePage() {
   const userId      = (session?.user as any)?.id as string | undefined
   const displayName = (session?.user as any)?.displayName || session?.user?.name || 'You'
 
-  const { entries, isLoading, toggleFav, remove } = useJournalEntries()
+  const { entries, isLoading, toggleFav, remove } = useJournalEntries(userId)
 
   const totalWords = entries.reduce(
     (acc, e) => acc + e.content.split(/\s+/).filter(Boolean).length, 0
