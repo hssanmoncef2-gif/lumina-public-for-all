@@ -1,36 +1,33 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { getServerSession } from 'next-auth'
+import { authOptions } from '@/lib/authOptions'
 import { connectDB } from '@/lib/mongodb/client'
 import { LetterRead } from '@/lib/models/LetterRead'
-import { getServerSession } from 'next-auth/next'
-import { authOptions } from '@/lib/authOptions'
-
-async function getUserId() {
-  const session = await getServerSession(authOptions)
-  if (!session?.user) return null
-  return (session.user as any).id ?? (session.user as any).email
-}
 
 export async function GET() {
-  const userId = await getUserId()
+  const session = await getServerSession(authOptions)
 
-  if (!userId) {
-    return NextResponse.json({ error: 'Unauthenticated' }, { status: 401 })
+  if (!session?.user || !(session.user as any).id) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
+
+  const userId = (session.user as any).id
 
   await connectDB()
 
   const reads = await LetterRead.find({ userId }).lean()
 
-  return NextResponse.json(reads.map((r) => r.letterId))
+  return NextResponse.json(reads)
 }
 
 export async function POST(req: NextRequest) {
-  const userId = await getUserId()
+  const session = await getServerSession(authOptions)
 
-  if (!userId) {
-    return NextResponse.json({ error: 'Unauthenticated' }, { status: 401 })
+  if (!session?.user || !(session.user as any).id) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
+  const userId = (session.user as any).id
   const { letterId } = await req.json()
 
   if (!letterId) {
@@ -39,11 +36,11 @@ export async function POST(req: NextRequest) {
 
   await connectDB()
 
-  await LetterRead.updateOne(
-    { userId, letterId },
-    { $setOnInsert: { readAt: new Date() } },
-    { upsert: true }
+  const read = await LetterRead.findOneAndUpdate(
+    {  letterId },
+    {  letterId },
+    { upsert: true, new: true }
   )
 
-  return NextResponse.json({ ok: true })
+  return NextResponse.json(read)
 }

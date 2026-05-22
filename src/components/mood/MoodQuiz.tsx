@@ -20,7 +20,7 @@ interface Props {
 const QUESTION_IDS = ['q1', 'q2', 'q3', 'q4', 'q5'] as const
 type QuestionId = typeof QUESTION_IDS[number]
 
-export default function MoodQuiz({ userId, onComplete }: Props) {
+export default function MoodQuiz({  onComplete }: Props) {
   const [step, setStep]             = useState(0)   // 0–4 questions, 5 = result
   const [answers, setAnswers]       = useState<QuizAnswers>({})
   const [currentAnswer, setCurrentAnswer] = useState<string | number | undefined>(undefined)
@@ -63,7 +63,7 @@ export default function MoodQuiz({ userId, onComplete }: Props) {
         setIsSaving(true)
         try {
           await saveMoodEntry({
-            userId,
+            
             moodId:    quizResult.primaryMood,
             intensity: quizResult.energyLevel,
           })
